@@ -1,1 +1,192 @@
 
+
+
+import java.io.*;
+import java.net.*;
+import java.io.File;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import java.util.ArrayList;
+
+
+
+
+import org.w3c.dom.Node;
+
+
+
+
+
+public class MyClient {
+
+//	public static void main(String[] args) { 
+//		try { 
+//			ServerSocket ss = new ServerSocket(6666);
+//			Socket s = ss.accept();
+//			DataInputStream dis = new DataInputStream(s.getInputStream());
+//			String str = (String)dis.readUTF();
+//			System.out.println("message = " + str);
+//			ss.close();
+//			
+//		}
+//		catch(Exception e) { System.out.println(e);}
+//	}
+//
+//}
+
+
+	public static void main(String[] args) { 
+		
+
+		try { 
+			
+			
+			Socket client =new Socket("127.0.0.1", 50000);
+			DataOutputStream dout = new DataOutputStream(client.getOutputStream());
+			DataInputStream din = new DataInputStream(client.getInputStream());
+			String str1 = "HELO";
+			dout.write(str1.getBytes()); 
+			dout.flush(); 
+			
+			
+			byte[] byteArray = new byte[din.available()];
+			din.read(byteArray);
+			String myString = new String(byteArray);
+			 
+			System.out.println(myString); 
+			 
+            str1 = "AUTH benjamin";
+			dout.write(str1.getBytes());
+			dout.flush();   
+
+			File XMLFile = new File("./ds-system.xml"); 
+			
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance(); 
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(XMLFile); 
+			doc.getDocumentElement().normalize();
+			
+				
+			System.out.println(	doc.getDocumentElement().getNodeName());
+			
+			NodeList nList = doc.getElementsByTagName("server");
+			int[] coreCount = new int[nList.getLength()];
+			String[] serverName = new String[nList.getLength()];
+
+			for( int temp =0; temp < nList.getLength(); temp++){ 
+
+				Node nNode = nList.item(temp);
+
+				if(nNode.getNodeType() == Node.ELEMENT_NODE) { 
+					Element eElement = (Element) nNode; 
+
+
+					//System.out.println(eElement.getAttribute("type")); 
+					//System.out.println(eElement.getAttribute("limit"));
+					//System.out.println(eElement.getAttribute("bootupTime"));
+					//System.out.println(eElement.getAttribute("hourlyRate"));
+					serverName[temp] = eElement.getAttribute("type");
+					// System.out.println(eElement.getAttribute("type"));
+					// System.out.println(serverName[temp]);
+					// System.out.println(eElement.getAttribute("coreCount"));
+					coreCount[temp] = Integer.parseInt(eElement.getAttribute("coreCount"));
+					
+					//System.out.println(coreCount[temp]); 
+					//System.out.println(eElement.getAttribute("memory"));
+					//System.out.println(eElement.getAttribute("disk"));
+				}
+
+			}
+			ArrayList <String> jobs = new ArrayList<String>();
+			System.out.println(serverName[findBestServer(coreCount)]);
+			boolean j = true;
+			while( j = true){
+            	byteArray = new byte[din.available()];
+				din.read(byteArray);
+             	myString = new String(byteArray);
+            	System.out.println(myString);
+            	if(myString.equals("OK")) { 
+               		str1 = "REDY";
+			    	dout.write(str1.getBytes());
+					dout.flush(); 
+					
+			
+				}
+				byteArray = new byte[din.available()];
+				din.read(byteArray);
+				myString = new String(byteArray);
+				if(myString.equals("NONE")){
+					j=false;
+					break;
+				}
+				else{
+					jobs.add(myString);
+
+					System.out.println(myString);
+					String[] data = myString.split(" ");
+					str1 = "GETS Capable " + data[3] + " "+ data[4] + " " + data[5];
+					System.out.println(str1);
+					dout.write(str1.getBytes());
+					dout.flush(); 
+					str1 = "OK";
+					dout.write(str1.getBytes());
+					dout.flush();
+
+				}	
+
+			}
+			 
+
+            //  byteArray = new byte [din.available()];
+            //  din.read(byteArray);
+            //  myString = new String(byteArray);
+            //  System.out.println(myString);
+
+            // str1 = "QUIT"; 
+            // dout.write(str1.getBytes());
+            // dout.flush();
+
+
+			dout.close();
+			client.close();
+			//String str = (String)din.readUTF();
+			//System.out.println(str);
+		}
+		catch(Exception e) { System.out.println(e);}
+	}
+
+
+
+	public static int findBestServer(int[] array) { 
+		int max =0;
+		int idx =0;
+
+		for(int i = 0; i< array.length; i++){ 
+			if(array[i]>=max){ 
+				max = array[i];
+				idx = i;
+			}
+		}
+		return idx;
+	}
+
+ 
+
+
+	// public static void readFile(){ 
+	// 	try{ 
+	// 		File XMLFile = new File("./pre-compiled/ds-system.xml"); 
+
+	// 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance(); 
+	// 		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+	// 		Document doc = dBuilder.parse(XMLFile); 
+
+		
+	// 	} catch (Exception ex) { 
+	// 		ex.printStackTrace();
+	// 	}
+	// }
+}
